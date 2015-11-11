@@ -1,0 +1,276 @@
+﻿Title  : Comments on PanLex's expression text degradation algorithm v.02015-04
+Author : Anshuman Pandey <anshuman.pandey@berkeley.edu>
+Date   : 10 November 2015
+
+--------------------------------------------------------------------------------
+
+Devanagari
+
+1. The degradation for <virama, ra, vowel sign i> is curious. The
+algorithm converts that sequence into VOWEL SIGN VOCALIC R. I can
+understand the idea behind this, but I think the logic is flipped. The
+VOWEL SIGN VOCALIC R may be the simplest graphical representation of a
+/ri/ sound, but the real-world degradation is the conversion of the
+vocalic sound into /ri/, eg. in the Kaithi script, words containing
+vocalic r are written using <ra, vowel sign i>. Moreover, the function
+does not carry the logic of the degradation to its fullest extent. For
+instance, it does not degrade <virama, ra, vowel sign ii> into VOWEL
+SIGN VOCALIC R, as would be excepted; instead it just replaces VOWEL
+SIGN II with its short analogue VOWEL SIGN I:
+
+पृ   ->   पृ
+प्रि  ->   पृ
+प्री  ->  परि
+
+Based upon the pattern for प्रि , the degradation of प्री should also
+be पृ. A better degradation would be:
+
+पृ   ->   प्रि
+प्रि  ->   प्रि
+प्री  ->  प्रि
+
+Secondly, the degradation should be extended to the independent
+letters VOCALIC R (ऋ) and VOCALIC RR (ॠ), which should be converted
+into रि.
+
+2. If RA + VOWEL SIGN I is degraded, then the same should be done for
+<virama, la, vowel sign i>. At present this sequence is left
+untouched:
+
+पॢ  ->   पॢ
+प्लि  ->   पलि
+
+The <virama, la, vowel sign vocalic l> should be converted to vowel
+sign vocalic l. So, प्लि would degrade into पॢ. (Or flipped, as I
+suggest in item #1 above). The same applies to the independent letter
+VOCALIC L (ऌ) and VOCALIC LL (ॡ).
+
+3. AVAGRAHA (ऽ) is left untouched. This should be converted into the
+letter A (अ), and multiple instances should be folded into one. For
+example, present input and output:
+
+ऽव   ->  ऽव
+ऽऽव   ->  ऽऽव
+वऽ   ->  वऽ
+
+Expected result:
+
+ऽव   ->  अव
+ऽऽव   ->  अव
+वऽ - > वअ
+
+Ideally, the function would just chop away word-final AVAGRAHA.
+
+4. OM. The character OM (ॐ) is left untouched. This should degrade
+into ओं <letter o, sign anusvara>.
+
+5. Digits within words: Currently the algorithm skips over digits that
+occur within words. I don't know if this is by design. But, such
+occurrences prevent full conflation of what are identical words. For
+instance, ॐ (OM) is often represented as ओ३म् <letter o, digit three,
+letter m, virama>, where the digit ३ indicates elongation of the ओ in
+pronunciation. Here is the current input and output:
+
+ओ३म्   ->  ओ३ं  
+
+(Note: although the anusvara may appear to combine with the digit
+three in the above, it is rendered with a dotted circle in some text
+editors and browsers.)
+
+Ideally, ओ३म् would degrade into ओं, such that both ॐ and ओ३म् would
+be equivalent.
+
+
+--------------------------------------------------------------------------------
+Gurmukhi
+
+1. U+0A71 GURMUKHI ADDAK -- This character is used for marking
+consonant gemination. The td algorithm is currently defined explicitly
+to delete this character:
+
+$td =~ s/[^\x{0A02}\x{0A3F}\x{0A41}\x{0A47}\x{0A4B}\x{0A71}\p{Ll}\p{Lo}\p{Nd}]//g;
+
+However, the search and replace misses ADDAK and the character shows
+up in the output:
+
+ਅਦੱਕ   ->   ਅਦੱਕ
+
+The idea to remove it during degradation is correct. I wonder why it's
+being preserved by the algorithm. I've checked the input to make sure
+the encoded sequence is correct. I'm curious to know what results you
+have with ADDAK when you execute the algorithm...
+
+2. U+0A75 GURMUKHI SIGN YAKASH -- This character is used for
+representing a subjoined form of U+0A2F GURMUKHI LETTER YA, eg. in a
+cluster like /khya/. It is similar to the subjoined forms for RA (ਪ੍ਰ
+/pra/), VA (ਸ੍ਵ /sva/), HA (ੜ੍ਹ /ṛha/). These latter forms are
+produced using VIRAMA. The deprecation algorithm produces the expected
+result. The YAKASH, however, is completely deleted:
+
+ਪ੍ਰ   ->  ਪਰ
+ਸ੍ਵ   ->  ਸਵ
+ੜ੍ਹ   ->  ੜਹ
+ਖੵ   ->  ਖ
+
+This occurs because the YAKASH is a combining sign and is deleted
+automatically by algorithm. The correct degradation for the YAKASH
+would be U+0A2F:
+
+ਖੵ   ->  ਖਯ
+
+--------------------------------------------------------------------------------
+
+Malayalam
+
+1. Chillu consonants -- Malayalam has distinctive letters that
+represent certain bare consonants. In most Indic scripts, a bare
+consonant is indicated by means of a mark that represents deletion of
+the inherent vowel /a/. This sign is called 'halanta' in various
+languages and known as 'virama' in Unicode terminology. In the Unicode
+encoding model for Indic scripts, a bare consonant is represented as
+<c, VIRAMA>, where c = consonant letter, eg. Devanagari क /ka/ + ्
+'virama' = क् /k/. In Malayalam the 'virama' is known as
+'candrakkala'. It behaves similar to 'virama': Malayalam ക /ka/ + ്
+'candrakkala' = ക് /k/. However, when it occurs with certain
+consonants in word-final position, the sign is not a vowel silencer,
+but represents a shorted /a/ or /u/. For this reason, the following
+'chillu' letters are used for representing purely consonantal forms:
+
+
+chillu       base
+-------------------
+ൺ ṇ     ണ ṇa
+ൻ n      ന na
+ർ r      ര ra
+ൽ l      ല la
+ൾ ḷ      ള ḷa
+ൿ  k     ക ka
+
+They are ignored by the algorithm:
+
+ൺ  ->  ൺ
+ൻ  ->  ൻ
+ർ  ->  ർ
+ൽ  ->  ൽ
+ൾ  ->  ൾ
+ൿ  ->  ൿ
+ 
+The chillus should be account for as a matter of consistency,
+especially as the algorithm degrades a similar pure consonantal letter
+in Bengali into its base form:
+
+ৎ  ->  ত
+
+That is ৎ 'bengali letter khanda ta' converted to ত ' bengali letter
+ta'. The Bengali case suggests that the intention is to degrade
+various forms of a consonant letter into the base form. Following that
+assumption, the correct degradations for the Malayalam chillu letters
+should be as shown above in the "chillu / base" table. Actually,
+following degradation patterns, the two nasal letters should undergo a
+secondary conversion into ം 'malayalam sign anusvara'.
+
+2. Avagraha -- The ഽ 'avagraha' is the Malayalam analogue of the
+Devanagari ऽ 'avagraha' (see my previous comments on Devanagari for
+details). It is overlooked during degradation, just like the
+'avagraha':
+
+ഽവ   ->  ഽവ
+
+The 'avagraha' should correctly be degraded to അ 'malayalam letter a':
+
+ഽവ   ->  അവ
+
+--------------------------------------------------------------------------------
+
+Hebrew
+
+1. Final letters -- There are five letters in Hebrew that have
+word-final forms. The final letters are glyphic variants of the
+regular forms:
+
+ך  U+05DA FINAL KAF
+כ  U+05DB KAF
+
+ם  U+05DD FINAL MEM
+מ  U+05DE MEM
+
+ן  U+05DF FINAL NUN
+נ  U+05E0 NUN
+
+ף  U+05E3 FINAL PE
+פ  U+05E4 PE
+
+ץ  U+05E5 FINAL TSADI
+צ  U+05E6 TSADI
+
+The algorithm does not degrade these as expected:
+
+כ ך    ->    כך
+מ ם   ->   מם
+נ ן     ->     נן
+פ ף    ->   פף
+צ ץ    ->    צץ
+
+The final letters should be degraded into their regular forms:
+
+כ ך    ->    ככ
+מ ם   ->   ממ
+נ ן     ->     ננ
+פ ף    ->   פפ
+צ ץ    ->    צצ
+
+2. Yiddish ligatures -- The Hebrew block in Unicode has three digraph
+ligatures for Yiddish, which are encoded as atomic letters
+
+װ  U+05F0 YIDDISH DOUBLE VAV
+ױ  U+05F1 YIDDISH VAV YOD
+ײ  U+05F2 YIDDISH DOUBLE YOD
+
+The algorithm ignores these:
+
+װ   ->   װ
+ױ   ->   ױ
+ײ   ->   ײ
+
+The expected degradation is decomposition into two-letter sequences:
+
+װ   ->   וו
+ױ   ->   וי
+ײ   ->   יי
+
+As it might be difficult to distinguish visually, the column on the
+right contains the atomic letter, that on the left is the
+decomposition.
+
+--------------------------------------------------------------------------------
+
+Arabic
+
+Several comments and ideas on the degradation of Arabic are contained in 
+separate files: https://github.com/pandey/degrade
+
+
+--------------------------------------------------------------------------------
+
+Tibetan
+
+The degradation of Tibetan is quite lossy. The encoding model for Tibetan has 
+a full set of subjoined characters for representing all consonants when they 
+occur in clusters. The virama model does not apply. These subjoined characters, 
+such as ྲ U+0FB2 TIBETAN SUBJOINED LETTER RA, are defined in the UCD as 
+being of the general category "Mn" (non-spacing Mark).
+
+The td algorithm strips away all subjoined letters. Compare the original text 
+on the left and the degraded form on the right:
+
+གྲྱུ   ->  ག
+
+The encoded sequence for གྲྱུ  is: < ག U+0F42 TIBETAN LETTER GA, ྲ U+0FB2 TIBETAN 
+SUBJOINED LETTER RA, ྱ U+0FB1 TIBETAN SUBJOINED LETTER YA, ུ U+0F74 TIBETAN 
+VOWEL SIGN U>.
+
+The degradation for Tibetan should retain all subjoined letters. Or 
+if more elemental texts are required, then all subjoined letters 
+should be converted to the corresponding regular form.
+
+Secondly, vowel signs should probably be retained.
