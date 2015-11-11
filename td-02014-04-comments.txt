@@ -1,6 +1,6 @@
 ﻿Title  : Comments on PanLex's expression text degradation algorithm v.02015-04
 Author : Anshuman Pandey <anshuman.pandey@berkeley.edu>
-Date   : 20 May 2015
+Date   : 10 November 2015
 
 --------------------------------------------------------------------------------
 
@@ -258,10 +258,10 @@ The degradation of Tibetan is quite lossy. The encoding model for Tibetan has
 a full set of subjoined characters for representing all consonants when they 
 occur in clusters. The virama model does not apply. These subjoined characters, 
 such as ྲ U+0FB2 TIBETAN SUBJOINED LETTER RA, are defined in the UCD as 
-being of the general category "Mn" (non-spacing Mark). As the td algorithm 
-strips away all combining characters, it also removes all subjoined letters. 
-Compare the following original text on the left and the degraded form to 
-the left:
+being of the general category "Mn" (non-spacing Mark).
+
+The td algorithm strips away all subjoined letters. Compare the original text 
+on the left and the degraded form on the right:
 
 གྲྱུ   ->  ག
 
