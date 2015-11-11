@@ -248,3 +248,29 @@ Arabic
 
 Several comments and ideas on the degradation of Arabic are contained in 
 separate files: https://github.com/pandey/degrade
+
+
+--------------------------------------------------------------------------------
+
+Tibetan
+
+The degradation of Tibetan is quite lossy. The encoding model for Tibetan has 
+a full set of subjoined characters for representing all consonants when they 
+occur in clusters. The virama model does not apply. These subjoined characters, 
+such as ྲ U+0FB2 TIBETAN SUBJOINED LETTER RA, are defined in the UCD as 
+being of the general category "Mn" (non-spacing Mark). As the td algorithm 
+strips away all combining characters, it also removes all subjoined letters. 
+Compare the following original text on the left and the degraded form to 
+the left:
+
+གྲྱུ   ->  ག
+
+The encoded sequence for གྲྱུ  is: < ག U+0F42 TIBETAN LETTER GA, ྲ U+0FB2 TIBETAN 
+SUBJOINED LETTER RA, ྱ U+0FB1 TIBETAN SUBJOINED LETTER YA, ུ U+0F74 TIBETAN 
+VOWEL SIGN U>.
+
+The degradation for Tibetan should retain all subjoined letters. Or 
+if more elemental texts are required, then all subjoined letters 
+should be converted to the corresponding regular form.
+
+Secondly, vowel signs should probably be retained.
